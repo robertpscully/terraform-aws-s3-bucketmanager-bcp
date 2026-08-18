@@ -1,9 +1,9 @@
-output bucket_details {
-    value = {"bucket_name" = module.bucket_concrete.bucket_arn}
+output "bucket_details" {
+  value = { "bucket_name" = module.bucket_concrete.bucket_arn }
 }
 
 module "bucket_concrete" {
-    source = "app.terraform.io/scullycorp/bucketmanager-concrete/aws"
-    version = local.module_version
-    bucket_name = local.bucket_name
+  source      = "app.terraform.io/scullycorp/bucketmanager-concrete/aws"
+  version     = local.module_version
+  bucket_name = local.bucket_name
 }
