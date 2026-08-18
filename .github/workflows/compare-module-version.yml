@@ -1,0 +1,64 @@
+name: Check module_verstion consistency
+
+on:
+  push:
+    paths:
+      - '**/locals.tf'
+  pull_request:
+    paths:
+      - '**/locals.tf'
+
+jobs:
+  compare:
+    name: Compare module_verstion across locals.tf
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify module_verstion values are identical
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re, sys, pathlib
+
+          pattern = re.compile(r'^\s*module_verstion\s*=\s*(?:"|\')?(?P<val>.*?)(?:"|\')?\s*$')
+
+          files = sorted([p for p in pathlib.Path('.').rglob('locals.tf')])
+          if not files:
+              print('No locals.tf files found.')
+              sys.exit(1)
+
+          vals = {}
+          missing = []
+
+          for p in files:
+              text = p.read_text(encoding='utf-8')
+              found = False
+              for line in text.splitlines():
+                  m = pattern.match(line)
+                  if m:
+                      val = m.group('val')
+                      vals.setdefault(val, []).append(str(p))
+                      found = True
+                      break
+              if not found:
+                  missing.append(str(p))
+
+          if missing:
+              print("ERROR: The following locals.tf files do not contain 'module_verstion':")
+              for f in missing:
+                  print('  ' + f)
+              sys.exit(1)
+
+          if len(vals) > 1:
+              print("ERROR: Found differing 'module_verstion' values:")
+              for val, files in vals.items():
+                  print(f"  Value: {val}")
+                  for f in files:
+                      print('    ' + f)
+              sys.exit(1)
+
+          # single value — success
+          unique_val = next(iter(vals))
+          print(f"All locals.tf files have the same module_verstion: {unique_val}")
+          PY
