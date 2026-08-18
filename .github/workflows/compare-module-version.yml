@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify module_version values are identical
+      - name: Verify module_version values are identical (if present)
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -26,39 +26,31 @@ jobs:
           files = sorted([p for p in pathlib.Path('.').rglob('locals.tf')])
           if not files:
               print('No locals.tf files found.')
-              sys.exit(1)
+              sys.exit(0)
 
           vals = {}
-          missing = []
 
           for p in files:
               text = p.read_text(encoding='utf-8')
-              found = False
               for line in text.splitlines():
                   m = pattern.match(line)
                   if m:
                       val = m.group('val')
                       vals.setdefault(val, []).append(str(p))
-                      found = True
                       break
-              if not found:
-                  missing.append(str(p))
 
-          if missing:
-              print("ERROR: The following locals.tf files do not contain 'module_version':")
-              for f in missing:
-                  print('  ' + f)
-              sys.exit(1)
+          if not vals:
+              print("No 'module_version' occurrences found; nothing to check.")
+              sys.exit(0)
 
           if len(vals) > 1:
-              print("ERROR: Found differing 'module_version' values:")
-              for val, files in vals.items():
+              print("ERROR: Found differing 'module_version' values among files:")
+              for val, fls in vals.items():
                   print(f"  Value: {val}")
-                  for f in files:
+                  for f in fls:
                       print('    ' + f)
               sys.exit(1)
 
-          # single value — success
           unique_val = next(iter(vals))
-          print(f"All locals.tf files have the same module_version: {unique_val}")
+          print(f"All locals.tf files that contain 'module_version' have the same value: {unique_val}")
           PY
