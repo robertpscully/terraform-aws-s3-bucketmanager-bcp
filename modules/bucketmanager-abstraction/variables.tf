@@ -14,10 +14,6 @@ variable module_version {
     type = string
     default = "v0.1"
     validation {
-        condition = can(regex("^v[0-9]+\\.[0-9]+$", var.module_version))
-        error_message = "Module version must be in the format vX.Y where X and Y are integers."
-    }
-    validation {
         condition = var.module_version == local.module_version
         error_message = "Data format version (${var.module_version}) does not match the expected version (${local.module_version})."
     }
