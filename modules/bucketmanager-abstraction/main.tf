@@ -3,6 +3,7 @@ output bucket_details {
 }
 
 module "bucket_concrete" {
-    source = "tbd"
+    source = "app.terraform.io/scullycorp/bucketmanager-concrete/aws"
+    version = local.module_version
     bucket_name = local.bucket_name
 }
